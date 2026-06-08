@@ -1,0 +1,8 @@
+version : 2
+
+models:
+  -name : stg_land_registry_transcactions 
+   description : "Staging model for UK Land Registry Price Paid Data from 2018 to 2026"
+  columns:
+    -name : transaction_id 
+     description: "Unique identifier for property transactions"

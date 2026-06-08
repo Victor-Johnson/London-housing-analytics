@@ -1,0 +1,31 @@
+[0m15:34:11.247946 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10a2a8d90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10a354690>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10a354fd0>]}
+
+
+============================== 15:34:11.250332 | c31e564c-df68-458d-b95b-fbf7e8baf8aa ==============================
+[0m15:34:11.250332 [info ] [MainThread]: Running with dbt=1.11.8
+[0m15:34:11.250588 [debug] [MainThread]: running dbt with arguments {'use_experimental_parser': 'False', 'no_print': 'None', 'send_anonymous_usage_stats': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'fail_fast': 'False', 'version_check': 'True', 'use_colors': 'True', 'warn_error': 'None', 'profiles_dir': '/Users/victorjohnson/.dbt', 'log_path': 'logs', 'log_format': 'default', 'log_cache_events': 'False', 'debug': 'False', 'target_path': 'None', 'write_json': 'True', 'indirect_selection': 'eager', 'static_parser': 'True', 'partial_parse': 'True', 'printer_width': '80', 'invocation_command': 'dbt init london_housing', 'introspect': 'True', 'cache_selected_only': 'False', 'empty': 'None', 'quiet': 'False'}
+[0m15:34:11.256635 [info ] [MainThread]: Creating dbt configuration folder at /Users/victorjohnson/.dbt
+[0m15:34:11.257300 [debug] [MainThread]: Starter project path: /opt/homebrew/Caskroom/miniconda/base/envs/analytics-env/lib/python3.11/site-packages/dbt/include/starter_project
+[0m15:34:11.259708 [info ] [MainThread]: 
+Your new dbt project "london_housing" was created!
+
+For more information on how to configure the profiles.yml file,
+please consult the dbt documentation here:
+
+  https://docs.getdbt.com/docs/configure-your-profile
+
+One more thing:
+
+Need help? Don't hesitate to reach out to us via GitHub issues or on Slack:
+
+  https://community.getdbt.com/
+
+Happy modeling!
+
+[0m15:34:11.259849 [info ] [MainThread]: Setting up your profile.
+[0m15:36:16.895834 [info ] [MainThread]: Profile london_housing written to /Users/victorjohnson/.dbt/profiles.yml using target's sample configuration. Once updated, you'll be able to start developing with dbt.
+[0m15:36:17.509587 [debug] [MainThread]: Resource report: {"command_name": "init", "command_success": true, "command_wall_clock_time": 126.29083, "process_in_blocks": "0", "process_kernel_time": 0.161776, "process_mem_max_rss": "118767616", "process_out_blocks": "0", "process_user_time": 0.472755}
+[0m15:36:17.510909 [debug] [MainThread]: Command `dbt init` succeeded at 15:36:17.510697 after 126.29 seconds
+[0m15:36:17.511687 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10a33bcd0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10a2a8390>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x109f60c90>]}
+[0m15:36:17.512381 [debug] [MainThread]: Flushing usage events
+[0m15:36:18.090877 [debug] [MainThread]: An error was encountered while trying to flush usage events
