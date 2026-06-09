@@ -1,0 +1,31 @@
+version: 2
+
+sources:
+  - name: main
+    description: "Raw tables loaded from HM Land Registry S3 bucket"
+    tables:
+      - name: raw_transactions
+        description: "Land Registry Price Paid data 2018-2026"
+        columns:
+          - name: transaction_id
+            tests:
+              - unique
+              - not_null
+          - name: price
+            tests:
+              - not_null
+          - name: postcode
+            tests:
+              - not_null:
+                  config:
+                    severity: warn
+
+      - name: raw_hpi
+        description: "UK House Price Index monthly averages by region 1968-2026"
+        columns:
+          - name: Date
+            tests:
+              - not_null
+          - name: RegionName
+            tests:
+              - not_null

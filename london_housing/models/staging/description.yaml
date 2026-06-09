@@ -1,8 +1,214 @@
-version : 2
+version: 2
 
 models:
-  -name : stg_land_registry_transcactions 
-   description : "Staging model for UK Land Registry Price Paid Data from 2018 to 2026"
-  columns:
-    -name : transaction_id 
-     description: "Unique identifier for property transactions"
+  - name: stg_transactions
+    description: >
+      Staging model for UK Land Registry Price Paid Data 2018-2026.
+      Renames raw columns to readable names, decodes property type and tenure
+      codes, flags non-market transfers (price <= £1 or category B), and
+      documents known data quality issues in source data.
+    columns:
+      - name: transaction_id
+        description: "Unique identifier for each property transaction"
+        tests:
+          - unique
+          - not_null
+
+      - name: price
+        description: "Sale price in GBP. Includes non-market transfers at £1 — use is_non_market_transfer to filter"
+        tests:
+          - not_null
+
+      - name: date_of_transfer
+        description: "Date the property sale was completed"
+        tests:
+          - not_null
+
+      - name: postcode
+        description: >
+          UK postcode of the property. 26,641 nulls exist in source data —
+          93% are category B bulk transfers where postcode is not applicable.
+          Remaining ~2,000 are genuine source gaps. Use postcode_quality_flag
+          to filter in downstream models.
+        tests:
+          - not_null:
+              config:
+                severity: warn
+
+      - name: property_type
+        description: >
+          Decoded property type. D=detached, S=semi_detached, T=terraced,
+          F=flat_maisonette, O=other. Source uses single-letter codes,
+          this model expands to readable labels.
+        tests:
+          - not_null
+          - accepted_values:
+              config:
+                severity: error
+              values:
+                - detached
+                - semi_detached
+                - terraced
+                - flat_maisonette
+                - other
+                - unknown
+
+      - name: new_build_flag
+        description: "Whether the property was a new build at time of sale"
+        tests:
+          - accepted_values:
+              config:
+                severity: error
+              values:
+                - new_build
+                - established
+                - unknown
+
+      - name: tenure
+        description: "Freehold or leasehold tenure decoded from source F/L codes"
+        tests:
+          - accepted_values:
+              config:
+                severity: error
+              values:
+                - freehold
+                - leasehold
+                - unknown
+
+      - name: address_line
+        description: "Concatenated address built from saon, paon and street fields"
+
+      - name: town_city
+        description: "Town or city of the property"
+
+      - name: district
+        description: "Local government district"
+
+      - name: county
+        description: "County of the property"
+
+      - name: ppd_category_type
+        description: >
+          Land Registry transaction category. A=standard residential,
+          B=non-standard (bulk transfers, right-to-buy, repossessions).
+        tests:
+          - not_null
+          - accepted_values:
+              config:
+                severity: error
+              values:
+                - A
+                - B
+
+      - name: record_status
+        description: "Land Registry record status. A=addition, C=change, D=delete"
+        tests:
+          - accepted_values:
+              config:
+                severity: error
+              values:
+                - A
+                - C
+                - D
+
+      - name: is_non_market_transfer
+        description: >
+          True when price <= £1 or ppd_category_type = B. These records are
+          gifts, trust transfers, divorce settlements or bulk portfolio sales
+          and should be excluded from price analysis in most mart models.
+        tests:
+          - not_null
+
+      - name: postcode_quality_flag
+        description: >
+          valid = postcode present, bulk_transfer = null postcode on category B
+          transaction, missing_postcode = null postcode on category A transaction.
+        tests:
+          - not_null
+          - accepted_values:
+              config:
+                severity: error
+              values:
+                - valid
+                - bulk_transfer
+                - missing_postcode
+
+      - name: _source_file
+        description: "S3 filename this row was loaded from, for lineage tracking"
+
+      - name: _loaded_at
+        description: "Timestamp when this row was ingested into the raw layer"
+
+  - name: stg_hpi
+    description: >
+      Staging model for the UK House Price Index monthly data 1968-2026.
+      Renames columns from PascalCase to snake_case. Covers 405 regions
+      including national, regional, county and local authority breakdowns.
+      Used as benchmark index in fct_price_index mart model.
+    columns:
+      - name: date
+        description: "First day of the month the index applies to"
+        tests:
+          - not_null
+
+      - name: region_name
+        description: "Geographic region name — ranges from England and Wales down to local authority"
+        tests:
+          - not_null
+
+      - name: area_code
+        description: "ONS area code for the region"
+
+      - name: average_price
+        description: "Mean property price for the region and month in GBP"
+
+      - name: price_index
+        description: "HPI index value, base 100 = January 2015"
+
+      - name: price_index_sa
+        description: "Seasonally adjusted index value"
+
+      - name: change_1m_pct
+        description: "Month-on-month percentage price change"
+
+      - name: change_12m_pct
+        description: "Year-on-year percentage price change"
+
+      - name: sales_volume
+        description: "Number of sales in the period. Lags by 2-3 months due to registration delay"
+
+      - name: detached_price
+        description: "Average price for detached properties"
+
+      - name: semi_detached_price
+        description: "Average price for semi-detached properties"
+
+      - name: terraced_price
+        description: "Average price for terraced properties"
+
+      - name: flat_price
+        description: "Average price for flats and maisonettes"
+
+      - name: first_time_buyer_price
+        description: "Average price paid by first time buyers"
+
+      - name: former_owner_occupier_price
+        description: "Average price paid by former owner occupiers"
+
+      - name: cash_price
+        description: "Average price for cash purchases"
+
+      - name: mortgage_price
+        description: "Average price for mortgage purchases"
+
+      - name: new_build_price
+        description: "Average price for new build properties"
+
+      - name: established_price
+        description: "Average price for established properties"
+
+      - name: _source_file
+        description: "S3 filename this row was loaded from, for lineage tracking"
+
+      - name: _loaded_at
+        description: "Timestamp when this row was ingested into the raw layer"
