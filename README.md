@@ -1,78 +1,102 @@
-# London Housing — dbt project
+# London Housing — dbt + DuckDB Analytics
 
-This repository contains a starter dbt project for transforming and analyzing London housing data. It is scaffolded for use with a local DuckDB file and includes a Python virtual environment for development.
+End-to-end analytics pipeline for UK residential property sales. Ingests HM Land Registry Price Paid data and the UK House Price Index (HPI) from S3, loads them into a local DuckDB file, and transforms them through a dbt model layer into analysis-ready fact and dimension tables.
 
-**Status:** Project scaffolded — models, seeds, macros, and tests are placeholders and need to be implemented.
+## Data sources
 
-**Contents:**
-- `london_housing.duckdb` — local DuckDB database file (project data store)
-- `env/` — Python virtual environment used for development
-- `london_housing/` — the dbt project (models, macros, seeds, snapshots, tests)
+| Source | Description |
+| --- | --- |
+| HM Land Registry Price Paid | Individual property transactions across England & Wales |
+| UK House Price Index (HPI) | Monthly regional average prices and index values |
+
+Both datasets are stored as CSV files in an S3 bucket and loaded into DuckDB via `ingest/load_raw.py`.
+
+## Architecture
+
+```text
+S3 (raw CSVs)
+    └── ingest/load_raw.py       # loads raw_transactions, raw_hpi into DuckDB
+        └── staging/             # clean column names, cast types, decode codes
+            └── intermediate/    # filter non-market transfers, add price bands & date parts
+                └── marts/       # fct_transactions, fct_price_index, dim_location, dim_property, dim_time
+```
 
 ## Quickstart
 
-1. Activate the Python virtual environment (provided):
+### 1. Environment setup
 
-	```bash
-	source env/bin/activate
-	```
+```bash
+source env/bin/activate
+pip install dbt-core dbt-duckdb duckdb python-dotenv pandas
+```
 
-2. Install dbt and dependencies (if not already installed):
+### 2. Configure AWS credentials
 
-	```bash
-	pip install dbt-core dbt-duckdb duckdb
-	```
+Create a `.env` file in the project root:
 
-3. Configure your dbt `profiles.yml` to use DuckDB. A minimal example:
+```
+AWS_KEY_ID=your_key
+AWS_SECRET=your_secret
+AWS_REGION=eu-west-2
+AWS_BUCKET=your-bucket-name
+```
 
-	```yaml
-	london_housing:
-	  target: dev
-	  outputs:
-		 dev:
-			type: duckdb
-			path: ../london_housing.duckdb
-			threads: 1
-	```
+### 3. Configure dbt profile
 
-	Place this under your `~/.dbt/profiles.yml` or the location dbt expects.
+Add to `~/.dbt/profiles.yml`:
 
-4. Run dbt commands from the `london_housing` project directory:
+```yaml
+london_housing:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ../london_housing.duckdb
+      threads: 1
+```
 
-	```bash
-	cd london_housing
-	dbt debug
-	dbt seed     # if you add seed CSVs in seeds/
-	dbt run
-	dbt test
-	dbt docs generate
-	dbt docs serve
-	```
+### 4. Ingest raw data from S3
+
+```bash
+cd london_housing
+python ingest/load_raw.py
+```
+
+This creates `raw_transactions` and `raw_hpi` tables in `london_housing.duckdb`.
+
+### 5. Run dbt
+
+```bash
+dbt debug       # verify connection
+dbt run         # build all models
+dbt test        # run data quality tests
+dbt docs generate && dbt docs serve
+```
 
 ## Project structure
 
-- `models/staging/` — raw staging models (currently empty)
-- `models/intermediate/` — intermediate transformations (currently empty)
-- `models/marts/` — business-facing marts (currently empty)
-- `seeds/`, `macros/`, `snapshots/`, `tests/` — placeholders (.gitkeep)
+```text
+london_housing/
+├── ingest/
+│   └── load_raw.py                     # S3 → DuckDB ingestion
+├── models/
+│   ├── staging/
+│   │   ├── stg_transactions.sql        # decoded property types, tenure, address cleanup
+│   │   └── stg_hpi.sql                 # renamed HPI columns, buyer/transaction type splits
+│   ├── intermediate/
+│   │   ├── int_transactions_enriched.sql  # filters non-market transfers, adds price bands
+│   │   └── int_price_index.sql
+│   └── marts/
+│       ├── fct_transactions.sql
+│       ├── fct_price_index.sql
+│       ├── dim_location.sql
+│       ├── dim_property.sql
+│       └── dim_time.sql
+└── utils/                              # schema sniffing and bucket inspection scripts
+```
 
-## Development notes
+## Resources
 
-- The project is a starter scaffold. Add source data (or seeds) and implement models under `models/`.
-- Use `london_housing.duckdb` for local testing and lightweight analytics.
-- Keep `dbt_project.yml` and model configs up to date to control materializations and environment-specific behavior.
-
-## Next steps (suggested)
-
-1. Add `profiles.yml` and verify `dbt debug` passes.
-2. Add source definitions and staging models under `models/staging/`.
-3. Implement intermediate models and data quality tests.
-4. Build marts and document with `dbt docs`.
-
-## Help and resources
-
-- dbt docs: https://docs.getdbt.com
-- dbt community: https://community.getdbt.com
-
----
-_This README was generated from the current project scaffold. If you want, I can add a sample `profiles.yml`, a basic staging model, or CI instructions next._
+- [dbt docs](https://docs.getdbt.com)
+- [Land Registry Price Paid Data](https://www.gov.uk/government/collections/price-paid-data)
+- [UK House Price Index](https://www.gov.uk/government/collections/uk-house-price-index-reports)
