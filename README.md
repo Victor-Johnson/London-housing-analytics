@@ -95,6 +95,10 @@ london_housing/
 └── utils/                              # schema sniffing and bucket inspection scripts
 ```
 
+## Streamlit app
+
+![London Housing Market Briefing](Pictures/app_screenshot.png)
+
 ## Resources
 
 - [dbt docs](https://docs.getdbt.com)
