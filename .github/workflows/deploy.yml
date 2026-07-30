@@ -16,8 +16,29 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
+          envs: AWS_KEY_ID,AWS_SECRET,AWS_REGION,AWS_BUCKET,OPENAI_API_KEY
           script: |
-            cd /var/www/london_housing
+            if [ ! -d ~/housing-app ]; then
+              git clone https://github.com/victorjohnson979/london_housing.git ~/housing-app
+            fi
+
+            cd ~/housing-app
             git pull origin main
+
+            cat > .env << EOF
+            AWS_KEY_ID=$AWS_KEY_ID
+            AWS_SECRET=$AWS_SECRET
+            AWS_REGION=$AWS_REGION
+            AWS_BUCKET=$AWS_BUCKET
+            OPENAI_API_KEY=$OPENAI_API_KEY
+            EOF
+
             docker compose build app
             docker compose up -d --force-recreate app
+            docker image prune -f
+        env:
+          AWS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
+          AWS_SECRET: ${{ secrets.AWS_SECRET }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
