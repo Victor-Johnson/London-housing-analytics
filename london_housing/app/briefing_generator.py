@@ -35,7 +35,7 @@ Keep it factual and avoid speculation beyond what the data supports."""
 
     response = client.chat.completions.create(
         model="gpt-4o",
-        max_tokens=600,
+        max_tokens=200,
         messages=[{"role": "user", "content": prompt}]
     )
 

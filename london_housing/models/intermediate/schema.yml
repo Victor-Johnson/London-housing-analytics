@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  - name: int_transactions_enriched
+    description: "Market transactions only (non-market transfers excluded), with derived date parts and price band classifications."
+    columns:
+      - name: transaction_id
+        description: "Unique Land Registry transaction reference."
+        tests:
+          - unique
+          - not_null
+      - name: price
+        description: "Sale price in GBP."
+        tests:
+          - not_null
+      - name: price_millions
+        description: "Sale price rounded to 2 d.p. in millions."
+      - name: price_band
+        description: "Bucketed price range: under_250k, 250k_to_500k, 500k_to_1m, 1m_to_2m, above_2m."
+        tests:
+          - accepted_values:
+              values: ['under_250k', '250k_to_500k', '500k_to_1m', '1m_to_2m', 'above_2m']
+      - name: transaction_year
+        description: "Calendar year extracted from date_of_transfer."
+      - name: transaction_month_num
+        description: "Month number (1–12) extracted from date_of_transfer."
+      - name: transaction_month
+        description: "First day of the transfer month, used as the time grain for aggregations."
+      - name: date_of_transfer
+        description: "Date the property sale completed."
+      - name: postcode
+        description: "UK postcode of the sold property."
+      - name: property_type
+        description: "Decoded property type: Detached, Semi-Detached, Terraced, Flat/Maisonette, Other."
+      - name: tenure
+        description: "Freehold or Leasehold."
+      - name: new_build_flag
+        description: "True if the property is a new build."
+      - name: district
+        description: "Local authority district."
+      - name: county
+        description: "County."
+
+  - name: int_price_index
+    description: "Monthly district-level price aggregates with month-on-month change and a 3-month rolling average. Excludes non-market transfers and postcodes flagged as invalid."
+    columns:
+      - name: transfer_month
+        description: "First day of the month being aggregated."
+        tests:
+          - not_null
+      - name: district
+        description: "Local authority district."
+        tests:
+          - not_null
+      - name: county
+        description: "County."
+      - name: transaction_count
+        description: "Number of qualifying transactions in the district for the month."
+      - name: avg_price
+        description: "Mean sale price across all transactions in the district/month."
+      - name: median_price
+        description: "Median sale price."
+      - name: min_price
+        description: "Lowest sale price recorded."
+      - name: max_price
+        description: "Highest sale price recorded."
+      - name: prev_month_avg_price
+        description: "Prior month average price for the same district, used to compute mom_change_pct."
+      - name: mom_change_pct
+        description: "Month-on-month percentage change in average price for the district."
+      - name: rolling_3m_avg_price
+        description: "3-month rolling average price, smoothing short-term volatility."

@@ -1,0 +1,23 @@
+# Secrets
+.env
+
+# Python
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# DuckDB — too large for git, copy to VPS manually
+*.duckdb
+
+# dbt
+london_housing/target/
+london_housing/dbt_packages/
+london_housing/logs/
+logs/
+
+# Cached GeoJSON boundary data
+london_housing/data/
+
+# macOS
+.DS_Store

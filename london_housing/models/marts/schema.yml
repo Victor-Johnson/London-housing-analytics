@@ -1,0 +1,128 @@
+version: 2
+
+models:
+  - name: fct_transactions
+    description: "One row per completed market property sale. Primary fact table for transaction-level analysis."
+    columns:
+      - name: transaction_id
+        description: "Unique Land Registry transaction reference."
+        tests:
+          - unique
+          - not_null
+      - name: price
+        description: "Sale price in GBP."
+        tests:
+          - not_null
+      - name: price_millions
+        description: "Sale price rounded to 2 d.p. in millions."
+      - name: price_band
+        description: "Bucketed price range: under_250k, 250k_to_500k, 500k_to_1m, 1m_to_2m, above_2m."
+        tests:
+          - accepted_values:
+              values: ['under_250k', '250k_to_500k', '500k_to_1m', '1m_to_2m', 'above_2m']
+      - name: date_of_transfer
+        description: "Date the sale completed."
+        tests:
+          - not_null
+      - name: transaction_year
+        description: "Calendar year."
+      - name: transaction_month_num
+        description: "Month number (1–12)."
+      - name: transaction_month
+        description: "First day of the transfer month."
+      - name: property_type
+        description: "Decoded property type."
+      - name: tenure
+        description: "Freehold or Leasehold."
+      - name: new_build_flag
+        description: "True if the property is a new build."
+      - name: address_line
+        description: "Street address of the property."
+      - name: postcode
+        description: "UK postcode."
+      - name: district
+        description: "Local authority district."
+      - name: county
+        description: "County."
+      - name: ppd_category_type
+        description: "Land Registry PPD category: A (standard) or B (additional)."
+      - name: record_status
+        description: "A = addition, C = change, D = delete."
+      - name: _source_file
+        description: "Source CSV filename from S3."
+
+  - name: fct_price_index
+    description: "Monthly district-level price index with trend classification. Powers the Streamlit market briefing."
+    columns:
+      - name: transfer_month
+        description: "First day of the aggregation month."
+        tests:
+          - not_null
+      - name: district
+        description: "Local authority district."
+        tests:
+          - not_null
+      - name: county
+        description: "County."
+      - name: transaction_count
+        description: "Number of qualifying transactions."
+      - name: avg_price
+        description: "Mean sale price."
+      - name: median_price
+        description: "Median sale price."
+      - name: min_price
+        description: "Lowest sale price."
+      - name: max_price
+        description: "Highest sale price."
+      - name: prev_month_avg_price
+        description: "Prior month average price for the district."
+      - name: mom_change_pct
+        description: "Month-on-month percentage change in average price."
+      - name: rolling_3m_avg_price
+        description: "3-month rolling average price."
+      - name: price_trend
+        description: "Trend label: rising (>15% MoM), falling (<-15% MoM), stable, or insufficient_data."
+        tests:
+          - accepted_values:
+              values: ['rising', 'falling', 'stable', 'insufficient_data']
+
+  - name: dim_location
+    description: "Distinct district/county/town combinations for use as a location dimension."
+    columns:
+      - name: district
+        description: "Local authority district."
+        tests:
+          - not_null
+      - name: county
+        description: "County."
+      - name: town_city
+        description: "Town or city within the district."
+
+  - name: dim_property
+    description: "Distinct combinations of property type, tenure, and new-build status."
+    columns:
+      - name: property_type
+        description: "Decoded property type."
+        tests:
+          - not_null
+      - name: tenure
+        description: "Freehold or Leasehold."
+      - name: new_build_flag
+        description: "True if the property is a new build."
+
+  - name: dim_time
+    description: "Distinct time periods with season labels, derived from transaction dates."
+    columns:
+      - name: transaction_year
+        description: "Calendar year."
+        tests:
+          - not_null
+      - name: transaction_month_num
+        description: "Month number (1–12)."
+      - name: transaction_month
+        description: "First day of the month."
+      - name: season
+        description: "Season: winter (Dec–Feb), spring (Mar–May), summer (Jun–Aug), autumn (Sep–Nov)."
+        tests:
+          - accepted_values:
+              values: ['winter', 'spring', 'summer', 'autumn']
