@@ -4,6 +4,6 @@ services:
     restart: unless-stopped
     env_file: .env
     ports:
-      - "127.0.0.1:8501:8501"
+      - "8501:8501"
     volumes:
       - ./london_housing/london_housing.duckdb:/app/london_housing/london_housing.duckdb:ro
