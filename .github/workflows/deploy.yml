@@ -15,34 +15,20 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          envs: AWS_KEY_ID,AWS_SECRET,AWS_REGION,AWS_BUCKET,OPENAI_API_KEY
+          port: 22
           script: |
-            if [ ! -d ~/housing-app/.git ]; then
-              cd ~/housing-app
-              git init
-              git remote add origin https://github.com/victorjohnson979/london_housing.git
-              git fetch origin main
-              git checkout -t origin/main
-            else
-              cd ~/housing-app
-              git pull origin main
-            fi
+            cd ~/housing-app
 
-            cat > .env << EOF
-            AWS_KEY_ID=$AWS_KEY_ID
-            AWS_SECRET=$AWS_SECRET
-            AWS_REGION=$AWS_REGION
-            AWS_BUCKET=$AWS_BUCKET
-            OPENAI_API_KEY=$OPENAI_API_KEY
+            git pull origin main
+
+            cat > .env <<EOF
+            AWS_KEY_ID=${{ secrets.AWS_KEY_ID }}
+            AWS_SECRET=${{ secrets.AWS_SECRET }}
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            AWS_BUCKET=${{ secrets.AWS_BUCKET }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
             EOF
 
-            docker compose build app
-            docker compose up -d --force-recreate app
+            docker compose up -d --build
+
             docker image prune -f
-        env:
-          AWS_KEY_ID: ${{ secrets.AWS_KEY_ID }}
-          AWS_SECRET: ${{ secrets.AWS_SECRET }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
