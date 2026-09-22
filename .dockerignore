@@ -11,5 +11,4 @@ london_housing/london_housing.duckdb
 data/
 Pictures/
 logs/
-requirements-pipeline.txt
 nginx-housing.conf

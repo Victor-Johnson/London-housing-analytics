@@ -32,6 +32,10 @@ models:
         description: "First day of the transfer month."
       - name: property_type
         description: "Decoded property type."
+        tests:
+          - relationships:
+              to: ref('dim_property')
+              field: property_type
       - name: tenure
         description: "Freehold or Leasehold."
       - name: new_build_flag
@@ -42,6 +46,10 @@ models:
         description: "UK postcode."
       - name: district
         description: "Local authority district."
+        tests:
+          - relationships:
+              to: ref('dim_location')
+              field: district
       - name: county
         description: "County."
       - name: ppd_category_type
@@ -62,6 +70,9 @@ models:
         description: "Local authority district."
         tests:
           - not_null
+          - relationships:
+              to: ref('dim_location')
+              field: district
       - name: county
         description: "County."
       - name: transaction_count

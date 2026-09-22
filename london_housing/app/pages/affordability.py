@@ -8,6 +8,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from app.queries import get_district_prices
+from app.calculators import monthly_repayment
 
 # ONS Local Authority Districts boundary GeoJSON (simplified, public domain)
 # BGC = Boundaries Generalised Clipped — lower resolution, faster to load
@@ -39,16 +40,18 @@ def load_geojson():
         return None
 
 
-def monthly_repayment(principal: float, annual_rate: float, term_years: int) -> float:
-    r = annual_rate / 100 / 12
-    n = term_years * 12
-    if r == 0:
-        return principal / n
-    return principal * r * (1 + r) ** n / ((1 + r) ** n - 1)
-
-
 st.title("Affordability Calculator")
 st.caption("See which districts are within your budget based on average sale prices")
+
+st.page_link("pages/briefing.py", label="See this month's market briefing", icon="📈")
+
+with st.expander("Where this data comes from"):
+    st.markdown(
+        "Prices are calculated from HM Land Registry's official record of every "
+        "residential sale in England and Wales, refreshed monthly. Districts with "
+        "fewer than 20 recorded sales in the latest month are excluded, so the "
+        "averages aren't skewed by a handful of transactions."
+    )
 
 # ── Inputs ────────────────────────────────────────────────────────────────────
 col1, col2 = st.columns(2)
@@ -129,7 +132,7 @@ else:
             "repayment_label": "Monthly repayment",
             "county": "County",
         },
-        mapbox_style="carto-positron",
+        mapbox_style="white-bg",
         center={"lat": 52.5, "lon": -1.5},
         zoom=5.2,
         opacity=0.7,

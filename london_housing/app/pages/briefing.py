@@ -27,6 +27,15 @@ st.caption("AI-generated monthly analysis from UK Land Registry data")
 
 st.page_link("pages/affordability.py", label="Can you afford to buy in these areas?", icon="🏠")
 
+with st.expander("Where this data comes from"):
+    st.markdown(
+        "Every month's briefing is generated from HM Land Registry's official "
+        "record of residential property sales. It ranks districts by month-on-"
+        "month price change, then an AI model writes a short, factual summary of "
+        "what moved and why it might have — districts with fewer than 20 sales "
+        "that month are excluded so the ranking isn't skewed by a handful of deals."
+    )
+
 months = get_available_months()
 month = st.selectbox("Select a month", months)
 
@@ -40,7 +49,7 @@ if st.button("Generate Briefing"):
         st.warning("No data available for this month with the current transaction threshold.")
     else:
         chart_data = pd.DataFrame({
-            "district": [r[0] for r in rising] + [f[0] for f in falling],
+            "district": [r[0].title() for r in rising] + [f[0].title() for f in falling],
             "mom_change_pct": [r[3] for r in rising] + [f[3] for f in falling]
         })
 
@@ -50,8 +59,11 @@ if st.button("Generate Briefing"):
             y="mom_change_pct",
             color="mom_change_pct",
             color_continuous_scale=["red", "white", "green"],
+            labels={"district": "District", "mom_change_pct": "Price change vs. last month"},
             title=f"Month-on-month price change — {month}"
         )
+        fig.update_yaxes(ticksuffix="%")
+        fig.update_coloraxes(colorbar_ticksuffix="%")
         st.plotly_chart(fig, use_container_width=True)
 
         col1, col2 = st.columns(2)
@@ -59,12 +71,12 @@ if st.button("Generate Briefing"):
         with col1:
             st.subheader("Top 3 rising")
             for r in rising:
-                st.metric(label=r[0], value=f"£{r[2]:,.0f}", delta=f"{r[3]}%")
+                st.metric(label=r[0].title(), value=f"£{r[2]:,.0f}", delta=f"{r[3]}%")
 
         with col2:
             st.subheader("Top 3 falling")
             for f in falling:
-                st.metric(label=f[0], value=f"£{f[2]:,.0f}", delta=f"{f[3]}%")
+                st.metric(label=f[0].title(), value=f"£{f[2]:,.0f}", delta=f"{f[3]}%")
 
         st.subheader("Market analysis")
         with st.spinner("Generating briefing..."):
