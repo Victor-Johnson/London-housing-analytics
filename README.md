@@ -2,11 +2,21 @@
 
 **Stack:** dbt · DuckDB · Python · S3 · Streamlit · OpenAI · Docker · GitHub Actions
 
-End-to-end analytics pipeline for UK residential property sales. Ingests HM Land Registry Price Paid data from S3, transforms it through a layered dbt model layer, and surfaces it through a Streamlit app that generates AI-written market briefings.
+See which London boroughs you can actually afford, and get an AI-written take on where prices are moving this month — backed by a real analytics engineering pipeline underneath. End-to-end pipeline for UK residential property sales: ingests HM Land Registry Price Paid data from S3, transforms it through a layered dbt model, and surfaces it through a two-page Streamlit app.
+
+## Live demo
+
+**[housing.victorjohnson.dev](https://housing.victorjohnson.dev)**
 
 ## Streamlit app
 
+**Market briefing** — an AI model ranks districts by month-on-month price change and writes a short, factual summary of what moved.
+
 ![London Housing Market Briefing](Pictures/app_screenshot.png)
+
+**Affordability calculator** — enter a salary, deposit, and mortgage terms to see which of the UK's 300+ districts are within budget on a live choropleth map.
+
+![Affordability calculator](Pictures/affordability_screenshot.png)
 
 ## Architecture
 
@@ -48,9 +58,13 @@ london_housing/
 │       ├── dim_property.sql
 │       └── dim_time.sql
 ├── app/
-│   ├── streamlit.py                       # Streamlit UI
+│   ├── streamlit.py                       # Streamlit UI entrypoint + theme
 │   ├── queries.py                         # DuckDB query functions
-│   └── briefing_generator.py             # OpenAI market briefing
+│   ├── briefing_generator.py             # OpenAI market briefing
+│   ├── calculators.py                     # Pure mortgage/affordability math
+│   ├── pages/                             # Market briefing + affordability calculator pages
+│   ├── tests/                             # pytest suite for the app layer
+│   └── .streamlit/config.toml             # Brand theme
 └── utils/                                 # schema sniffing and bucket inspection scripts
 ```
 
@@ -104,9 +118,15 @@ dbt test                    # run data quality tests
 streamlit run london_housing/app/streamlit.py
 ```
 
+## Testing & CI
+
+- **dbt tests** — schema tests (`not_null`, `unique`, `accepted_values`, `relationships`) across staging, intermediate and mart models, including referential integrity between the fact and dimension tables and documented data-quality caveats (e.g. the postcode gaps in source data). Run with `dbt test`.
+- **pytest** — unit tests for the Python app layer: the mortgage/affordability calculator, the DuckDB query functions (against a fixture database), and the AI briefing generator (with the OpenAI client mocked). Run with `cd london_housing && pytest`.
+- **CI** (`.github/workflows/ci.yml`) runs both on every push and pull request. Deploys (`.github/workflows/deploy.yml`) only trigger once CI has passed on `main`, so a broken model or test can't reach the live demo.
+
 ## Deployment
 
-Deployed via Docker Compose with Caddy handling HTTPS automatically. GitHub Actions deploys on every push to `main`.
+Deployed via Docker Compose with Caddy handling HTTPS automatically. GitHub Actions deploys to the VPS once CI passes on `main`.
 
 ## Resources
 

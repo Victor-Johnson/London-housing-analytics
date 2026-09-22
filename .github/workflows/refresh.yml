@@ -1,0 +1,26 @@
+name: Refresh Data
+
+on:
+  schedule:
+    # Land Registry typically publishes the monthly update mid-month.
+    # 08:00 UTC on the 16th gives it a day's buffer.
+    - cron: "0 8 16 * *"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Refresh via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          script: |
+            cd ~/housing-app/London-housing-analytics
+
+            docker compose --profile refresh run --rm refresh
+            docker compose restart app

@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run pytest
+        working-directory: london_housing
+        run: pytest
+
+  dbt-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements-pipeline.txt
+
+      - name: Write throwaway dbt profile
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml <<EOF
+          london_housing:
+            target: ci
+            outputs:
+              ci:
+                type: duckdb
+                path: ci.duckdb
+                threads: 1
+          EOF
+
+      - name: dbt parse
+        working-directory: london_housing
+        env:
+          DBT_SEND_ANONYMOUS_USAGE_STATS: "false"
+        run: dbt parse

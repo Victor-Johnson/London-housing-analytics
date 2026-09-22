@@ -4,7 +4,15 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+_client = None
+
+
+def get_client() -> openai.OpenAI:
+    global _client
+    if _client is None:
+        _client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    return _client
+
 
 def generate_briefing(month: str, rising: list, falling: list) -> str:
     rising_text = "\n".join([
@@ -33,7 +41,7 @@ Write a concise, professional market briefing (3-4 short paragraphs) covering:
 
 Keep it factual and avoid speculation beyond what the data supports."""
 
-    response = client.chat.completions.create(
+    response = get_client().chat.completions.create(
         model="gpt-4o",
         max_tokens=200,
         messages=[{"role": "user", "content": prompt}]

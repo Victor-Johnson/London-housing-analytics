@@ -139,7 +139,7 @@ def append_from_s3(s3_uri: str) -> int:
         before = con.execute("SELECT COUNT(*) FROM raw_transactions").fetchone()[0]
 
         con.execute(f"""
-            INSERT OR IGNORE INTO raw_transactions
+            INSERT INTO raw_transactions
             SELECT
                 column00  AS transaction_id,
                 column01  AS price,
@@ -164,6 +164,7 @@ def append_from_s3(s3_uri: str) -> int:
                 header=false,
                 columns={COLUMN_TYPES}
             )
+            WHERE column00 NOT IN (SELECT transaction_id FROM raw_transactions)
         """)
 
         after = con.execute("SELECT COUNT(*) FROM raw_transactions").fetchone()[0]

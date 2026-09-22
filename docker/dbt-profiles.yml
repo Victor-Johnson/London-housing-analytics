@@ -1,0 +1,7 @@
+london_housing:
+  target: prod
+  outputs:
+    prod:
+      type: duckdb
+      path: /app/london_housing/london_housing.duckdb
+      threads: 4

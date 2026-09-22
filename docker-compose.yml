@@ -7,3 +7,15 @@ services:
       - "8501:8501"
     volumes:
       - ./london_housing/london_housing.duckdb:/app/london_housing/london_housing.duckdb:ro
+
+  # Pulls the latest Land Registry monthly update, uploads it to S3, ingests
+  # it into the DuckDB file below, and rebuilds the dbt models. Not started
+  # by `docker compose up` — run explicitly:
+  #   docker compose --profile refresh run --rm refresh
+  refresh:
+    build: .
+    profiles: ["refresh"]
+    env_file: .env
+    volumes:
+      - ./london_housing/london_housing.duckdb:/app/london_housing/london_housing.duckdb
+    command: ["python", "london_housing/ingest/refresh.py"]
