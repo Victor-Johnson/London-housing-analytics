@@ -3,7 +3,11 @@ Monthly refresh pipeline:
   1. Download the latest Price Paid monthly update from Land Registry
   2. Upload to S3 with a dated key (pp-YYYY-MM.csv)
   3. Load new rows from S3 into DuckDB via httpfs
-  4. Run dbt
+  4. Re-ingest the latest ONS rent release (load_rents.py — always replaces
+     raw_rents wholesale, since each ONS release is a full re-published
+     series rather than a delta)
+  5. Run dbt — unconditionally, so a model can never silently go stale just
+     because one of the two sources happened to have nothing new that month
 
 Run on the 15th of each month — Land Registry typically publishes mid-month.
 Verify the source URL at: https://www.gov.uk/government/collections/price-paid-data
@@ -188,6 +192,11 @@ def verify_db() -> None:
         ).fetchone()[0]
         print(f"  raw_transactions : {total:,} rows, latest transfer: {latest}")
         print(f"  fct_price_index  : latest month = {latest_month}")
+
+        rent_month = con.execute(
+            "SELECT MAX(time_period) FROM fct_rents"
+        ).fetchone()[0]
+        print(f"  fct_rents        : latest month = {rent_month}")
     finally:
         con.close()
 
@@ -195,13 +204,40 @@ def verify_db() -> None:
 def run_dbt() -> None:
     print("Running dbt...")
     dbt_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    result = subprocess.run(["dbt", "run"], cwd=dbt_dir, capture_output=True, text=True)
+    result = subprocess.run(
+        ["dbt", "--no-version-check", "run"], cwd=dbt_dir, capture_output=True, text=True
+    )
     if result.returncode != 0:
         print("dbt run failed:")
         print(result.stdout)
         print(result.stderr)
         sys.exit(1)
     print("  ✓ dbt run complete")
+
+
+def run_rent_ingestion(dry_run: bool = False) -> None:
+    ingest_dir = os.path.dirname(os.path.abspath(__file__))
+    if dry_run:
+        print("[check] ONS rent dataset page...")
+        resp = requests.get(
+            "https://www.ons.gov.uk/economy/inflationandpriceindices/datasets/"
+            "priceindexofprivaterentsukmonthlypricestatistics",
+            timeout=30,
+        )
+        resp.raise_for_status()
+        print("  ✓ reachable")
+        return
+
+    print("Refreshing ONS rent data...")
+    result = subprocess.run(
+        ["python", "load_rents.py"], cwd=ingest_dir, capture_output=True, text=True
+    )
+    if result.returncode != 0:
+        print("load_rents.py failed:")
+        print(result.stdout)
+        print(result.stderr)
+        sys.exit(1)
+    print(result.stdout)
 
 
 if __name__ == "__main__":
@@ -219,15 +255,14 @@ if __name__ == "__main__":
             check_s3()
             download(MONTHLY_UPDATE_URL, tmp)
             check_new_rows(tmp)
+            run_rent_ingestion(dry_run=True)
             print("\n✓ All checks passed — run without --dry-run to execute.")
         else:
             download(MONTHLY_UPDATE_URL, tmp)
             s3_uri = upload_to_s3(tmp, month_key)
-            new_rows = append_from_s3(s3_uri)
-            if new_rows == 0:
-                print("No new rows — already up to date, skipping dbt run.")
-            else:
-                run_dbt()
+            append_from_s3(s3_uri)
+            run_rent_ingestion()
+            run_dbt()
             verify_db()
             print("\nRefresh complete.")
     finally:
