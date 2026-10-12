@@ -42,6 +42,25 @@ def get_district_prices():
     return result
 
 
+def get_district_rents():
+    con = duckdb.connect(DB_PATH, read_only=True)
+    result = con.execute("""
+        SELECT
+            district,
+            region_name,
+            rental_price,
+            rental_price_one_bed,
+            rental_price_two_bed,
+            rental_price_three_bed,
+            rental_price_four_or_more_bed
+        FROM fct_rents
+        WHERE time_period = (SELECT MAX(time_period) FROM fct_rents)
+        ORDER BY rental_price ASC
+    """).fetchall()
+    con.close()
+    return result
+
+
 def get_top_falling(month: str, min_transactions: int = 20, limit: int = 3):
     con = duckdb.connect(DB_PATH, read_only=True)
     result = con.execute("""

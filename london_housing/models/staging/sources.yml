@@ -29,3 +29,19 @@ sources:
           - name: RegionName
             tests:
               - not_null
+
+      - name: raw_rents
+        description: "ONS Price Index of Private Rents (PIPR), local authorities in England and Wales, 2015-present"
+        columns:
+          - name: "Time period"
+            quote: true
+            tests:
+              - not_null
+          - name: "Area name"
+            quote: true
+            tests:
+              - not_null
+          - name: "Rental price"
+            quote: true
+            tests:
+              - not_null

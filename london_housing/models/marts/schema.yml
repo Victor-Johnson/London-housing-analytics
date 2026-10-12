@@ -137,3 +137,34 @@ models:
         tests:
           - accepted_values:
               values: ['winter', 'spring', 'summer', 'autumn']
+
+  - name: fct_rents
+    description: "Monthly district-level private rents from the ONS Price Index of Private Rents. Powers the rent affordability calculator."
+    columns:
+      - name: time_period
+        description: "First day of the month the rent statistics apply to."
+        tests:
+          - not_null
+      - name: district
+        description: "Local authority name, uppercased to match Land Registry's district field."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_location')
+              field: district
+      - name: region_name
+        description: "English region, or Wales."
+      - name: rental_price
+        description: "Mean monthly rent across all bedroom counts, in GBP."
+        tests:
+          - not_null
+      - name: rental_price_one_bed
+        description: "Mean monthly rent for one-bedroom properties, in GBP."
+      - name: rental_price_two_bed
+        description: "Mean monthly rent for two-bedroom properties, in GBP."
+      - name: rental_price_three_bed
+        description: "Mean monthly rent for three-bedroom properties, in GBP."
+      - name: rental_price_four_or_more_bed
+        description: "Mean monthly rent for four-or-more-bedroom properties, in GBP."
+      - name: mom_change_pct
+        description: "Month-on-month percentage change in mean rent for the district."

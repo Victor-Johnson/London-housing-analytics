@@ -212,3 +212,63 @@ models:
 
       - name: _loaded_at
         description: "Timestamp when this row was ingested into the raw layer"
+
+  - name: stg_rents
+    description: >
+      Staging model for the ONS Price Index of Private Rents (PIPR), England
+      and Wales local authorities, 2015-present. Renames columns to
+      snake_case and uppercases district to match the casing used by the
+      Land Registry district field elsewhere in this project.
+    columns:
+      - name: time_period
+        description: "First day of the month the rent statistics apply to"
+        tests:
+          - not_null
+
+      - name: area_code
+        description: "ONS area code for the local authority"
+        tests:
+          - not_null
+
+      - name: district
+        description: "Local authority name, uppercased to match the Land Registry district field"
+        tests:
+          - not_null
+
+      - name: region_name
+        description: "English region, or Wales"
+
+      - name: rental_price
+        description: "Mean monthly rent across all bedroom counts, in GBP"
+        tests:
+          - not_null
+
+      - name: rental_price_one_bed
+        description: "Mean monthly rent for one-bedroom properties, in GBP"
+
+      - name: rental_price_two_bed
+        description: "Mean monthly rent for two-bedroom properties, in GBP"
+
+      - name: rental_price_three_bed
+        description: "Mean monthly rent for three-bedroom properties, in GBP"
+
+      - name: rental_price_four_or_more_bed
+        description: "Mean monthly rent for four-or-more-bedroom properties, in GBP"
+
+      - name: rental_price_detached
+        description: "Mean monthly rent for detached properties, in GBP"
+
+      - name: rental_price_semi_detached
+        description: "Mean monthly rent for semi-detached properties, in GBP"
+
+      - name: rental_price_terraced
+        description: "Mean monthly rent for terraced properties, in GBP"
+
+      - name: rental_price_flat_maisonette
+        description: "Mean monthly rent for flats and maisonettes, in GBP"
+
+      - name: _source_file
+        description: "S3 filename this row was loaded from, for lineage tracking"
+
+      - name: _loaded_at
+        description: "Timestamp when this row was ingested into the raw layer"

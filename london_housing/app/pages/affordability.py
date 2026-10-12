@@ -2,48 +2,20 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-import json
-import requests
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from app.queries import get_district_prices
 from app.calculators import monthly_repayment
-
-# ONS Local Authority Districts boundary GeoJSON (simplified, public domain)
-# BGC = Boundaries Generalised Clipped — lower resolution, faster to load
-GEOJSON_URL = (
-    "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/"
-    "Local_Authority_Districts_May_2024_Boundaries_UK_BGC/FeatureServer/0/query"
-    "?where=1%3D1&outFields=LAD24NM&f=geojson&returnGeometry=true"
-)
-GEOJSON_CACHE = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
-    "data", "districts.geojson"
-)
+from app.geo import load_geojson, with_uppercase_district_key
 
 
-@st.cache_data(ttl=86400 * 30)
-def load_geojson():
-    if os.path.exists(GEOJSON_CACHE):
-        with open(GEOJSON_CACHE) as f:
-            return json.load(f)
-    try:
-        resp = requests.get(GEOJSON_URL, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
-        os.makedirs(os.path.dirname(GEOJSON_CACHE), exist_ok=True)
-        with open(GEOJSON_CACHE, "w") as f:
-            json.dump(data, f)
-        return data
-    except Exception:
-        return None
-
-
-st.title("Affordability Calculator")
+st.title("Buy Affordability Calculator")
 st.caption("See which districts are within your budget based on average sale prices")
 
-st.page_link("pages/briefing.py", label="See this month's market briefing", icon="📈")
+link_col1, link_col2 = st.columns(2)
+link_col1.page_link("pages/briefing.py", label="See this month's market briefing", icon="📈")
+link_col2.page_link("pages/rent_affordability.py", label="Renting instead?", icon="🔑")
 
 with st.expander("Where this data comes from"):
     st.markdown(
@@ -102,10 +74,7 @@ geojson = load_geojson()
 if geojson is None:
     st.info("Boundary data unavailable — showing table only.")
 else:
-    # normalise GeoJSON district names to uppercase for matching
-    for feature in geojson["features"]:
-        name = feature["properties"].get("LAD24NM", "")
-        feature["properties"]["LAD24NM_upper"] = name.upper()
+    geojson = with_uppercase_district_key(geojson)
 
     map_df = df.copy()
     map_df["status"] = map_df["within_budget"].map({True: "Within budget", False: "Over budget"})

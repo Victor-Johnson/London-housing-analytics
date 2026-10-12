@@ -8,6 +8,7 @@ st.set_page_config(page_title="London Housing", page_icon="🏙️", layout="wid
 
 pg = st.navigation([
     st.Page("pages/briefing.py", title="Market Briefing", icon="📈"),
-    st.Page("pages/affordability.py", title="Affordability Calculator", icon="🏠"),
+    st.Page("pages/affordability.py", title="Buy Affordability", icon="🏠"),
+    st.Page("pages/rent_affordability.py", title="Rent Affordability", icon="🔑"),
 ])
 pg.run()
