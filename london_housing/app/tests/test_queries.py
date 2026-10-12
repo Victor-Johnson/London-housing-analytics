@@ -54,3 +54,42 @@ def test_get_district_prices_uses_latest_month_only(fixture_db):
     assert "Hackney" in districts
     assert "Barking" not in districts  # not present in the latest month, 2024-02
     assert "Croydon" not in districts  # below the 20-transaction threshold
+
+
+@pytest.fixture
+def fixture_rents_db(tmp_path, monkeypatch):
+    db_path = str(tmp_path / "fixture_rents.duckdb")
+    con = duckdb.connect(db_path)
+    con.execute("""
+        CREATE TABLE fct_rents (
+            time_period DATE,
+            district VARCHAR,
+            region_name VARCHAR,
+            rental_price BIGINT,
+            rental_price_one_bed BIGINT,
+            rental_price_two_bed BIGINT,
+            rental_price_three_bed BIGINT,
+            rental_price_four_or_more_bed BIGINT,
+            mom_change_pct DOUBLE
+        )
+    """)
+    con.execute("""
+        INSERT INTO fct_rents VALUES
+            ('2024-01-01', 'HACKNEY', 'London', 1800, 1500, 1900, 2400, 3000,  2.0),
+            ('2024-01-01', 'BURNLEY', 'North West', 650, 500, 700, 850, 1000, -1.0),
+            ('2024-02-01', 'HACKNEY', 'London', 1850, 1550, 1950, 2450, 3050,  2.8),
+            ('2024-02-01', 'BURNLEY', 'North West', 680, 520, 720, 870, 1020,  4.6)
+    """)
+    con.close()
+    monkeypatch.setattr(queries, "DB_PATH", db_path)
+    return db_path
+
+
+def test_get_district_rents_uses_latest_month_only(fixture_rents_db):
+    rows = queries.get_district_rents()
+
+    districts = [r[0] for r in rows]
+    assert districts == ["BURNLEY", "HACKNEY"]  # sorted ascending by rental_price
+
+    burnley = next(r for r in rows if r[0] == "BURNLEY")
+    assert burnley[2] == 680  # rental_price — the February value, not January's 650

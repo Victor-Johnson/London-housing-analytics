@@ -25,7 +25,9 @@ def get_available_months():
 st.title("Market Briefing")
 st.caption("AI-generated monthly analysis from UK Land Registry data")
 
-st.page_link("pages/affordability.py", label="Can you afford to buy in these areas?", icon="🏠")
+link_col1, link_col2 = st.columns(2)
+link_col1.page_link("pages/affordability.py", label="Can you afford to buy in these areas?", icon="🏠")
+link_col2.page_link("pages/rent_affordability.py", label="Can you afford to rent in these areas?", icon="🔑")
 
 with st.expander("Where this data comes from"):
     st.markdown(

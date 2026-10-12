@@ -70,3 +70,23 @@ models:
         description: "Month-on-month percentage change in average price for the district."
       - name: rolling_3m_avg_price
         description: "3-month rolling average price, smoothing short-term volatility."
+
+  - name: int_rents_enriched
+    description: "Monthly district-level private rents with month-on-month change. Local authority rows only, already pre-aggregated by ONS."
+    columns:
+      - name: time_period
+        description: "First day of the month the rent statistics apply to."
+        tests:
+          - not_null
+      - name: district
+        description: "Local authority name, uppercased to match Land Registry's district field."
+        tests:
+          - not_null
+      - name: rental_price
+        description: "Mean monthly rent across all bedroom counts, in GBP."
+        tests:
+          - not_null
+      - name: prev_month_rental_price
+        description: "Prior month's mean rent for the same district, used to compute mom_change_pct."
+      - name: mom_change_pct
+        description: "Month-on-month percentage change in mean rent for the district."
