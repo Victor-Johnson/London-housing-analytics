@@ -20,7 +20,12 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: 22
           script: |
+            set -e
             cd ~/housing-app/London-housing-analytics
 
             docker compose --profile refresh run --rm refresh
             docker compose restart app
+
+            # Confirm the refresh actually left every table the app needs.
+            docker compose run --rm --entrypoint "" app bash -c \
+              "cd london_housing && pytest app/tests/test_schema_health.py -v"
