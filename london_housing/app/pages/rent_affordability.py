@@ -6,7 +6,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 from app.queries import get_district_rents
-from app.calculators import max_affordable_rent
+from app.calculators import max_affordable_rent, rent_budget_from_amount
 from app.geo import load_geojson, with_uppercase_district_key
 
 st.title("Rent Affordability Calculator")
@@ -32,24 +32,58 @@ BEDROOM_OPTIONS = {
     "4+ bedroom": 6,
 }
 
+budget_mode = st.radio(
+    "How do you want to work out your budget?",
+    ["From my salary", "From a monthly amount"],
+    horizontal=True,
+)
+
 col1, col2 = st.columns(2)
 
-with col1:
-    salary = st.number_input("Annual salary (£)", min_value=0, value=35000, step=1000)
+if budget_mode == "From my salary":
+    with col1:
+        salary = st.number_input("Annual salary (£)", min_value=0, value=35000, step=1000)
+    with col2:
+        ratio_pct = st.slider("Rent as % of income", min_value=20, max_value=50, value=35)
+        bedroom_choice = st.selectbox("Property size", list(BEDROOM_OPTIONS.keys()))
 
-with col2:
-    ratio_pct = st.slider("Rent as % of income", min_value=20, max_value=50, value=35)
-    bedroom_choice = st.selectbox("Property size", list(BEDROOM_OPTIONS.keys()))
+    monthly_income = salary / 12
+    budget = max_affordable_rent(monthly_income, ratio=ratio_pct / 100)
+
+    metric1_label, metric1_value, metric1_help = "Monthly income", f"£{monthly_income:,.0f}", "Annual salary ÷ 12"
+    metric2_help = f"{ratio_pct}% of monthly income — a standard affordability rule of thumb"
+
+else:
+    with col1:
+        monthly_amount = st.number_input("Monthly amount (£)", min_value=0, value=1000, step=50)
+        includes_bills = st.radio(
+            "Does this amount need to cover bills too?",
+            ["No — this is for rent only", "Yes — bills come out of this too"],
+        )
+    with col2:
+        bedroom_choice = st.selectbox("Property size", list(BEDROOM_OPTIONS.keys()))
+        if includes_bills.startswith("Yes"):
+            monthly_bills = st.number_input(
+                "Estimated monthly bills (£)", min_value=0, value=250, step=25,
+                help="Gas, electricity, water, council tax, broadband — a rough UK average. Adjust to your own situation."
+            )
+        else:
+            monthly_bills = 0
+
+    budget = rent_budget_from_amount(monthly_amount, monthly_bills)
+
+    metric1_label, metric1_value, metric1_help = "Monthly amount", f"£{monthly_amount:,.0f}", "What you said you have to spend each month"
+    metric2_help = (
+        f"£{monthly_amount:,.0f} minus £{monthly_bills:,.0f} estimated bills"
+        if monthly_bills else "Bills not deducted — this amount is rent only"
+    )
 
 # ── Summary metrics ───────────────────────────────────────────────────────────
-monthly_income = salary / 12
-budget = max_affordable_rent(monthly_income, ratio=ratio_pct / 100)
-
 st.divider()
 
 m1, m2 = st.columns(2)
-m1.metric("Monthly income", f"£{monthly_income:,.0f}", help="Annual salary ÷ 12")
-m2.metric("Max affordable rent", f"£{budget:,.0f}/mo", help=f"{ratio_pct}% of monthly income — a standard affordability rule of thumb")
+m1.metric(metric1_label, metric1_value, help=metric1_help)
+m2.metric("Rent budget", f"£{budget:,.0f}/mo", help=metric2_help)
 
 st.divider()
 
